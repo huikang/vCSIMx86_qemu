@@ -106,6 +106,11 @@ typedef struct CPUTLBEntry {
                    sizeof(uintptr_t))];
 } CPUTLBEntry;
 
+typedef struct GPATLBEntry {
+    target_ulong vaddr;
+    target_phys_addr_t paddr;
+} GPATLBEntry;
+
 extern int CPUTLBEntry_wrong_size[sizeof(CPUTLBEntry) == (1 << CPU_TLB_ENTRY_BITS) ? 1 : -1];
 
 #define CPU_COMMON_TLB \

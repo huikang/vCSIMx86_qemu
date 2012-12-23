@@ -233,6 +233,25 @@ static void tlb_add_large_page(CPUArchState *env, target_ulong vaddr,
     env->tlb_flush_mask = mask;
 }
 
+void gpatlb_set_page(CPUArchState *env, target_ulong vaddr,
+                     target_phys_addr_t paddr, int mmu_idx)
+{
+    unsigned int index;
+    target_ulong address;
+    GPATLBEntry *te;
+
+    address = vaddr;
+     index = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    /* qemu_log("gpatlb_set_page: vaddr=" TARGET_FMT_lx " paddr=0x" TARGET_FMT_
+            " idx=%d index=%u\n",
+            vaddr, paddr, mmu_idx, index);*/
+
+    te = &env->gpa_table[mmu_idx][index];
+
+    te->vaddr = address;
+    te->paddr = paddr;
+}
+
 /* Add a new TLB entry. At most one entry for a given virtual address
    is permitted. Only a single TARGET_PAGE_SIZE region is mapped, the
    supplied size is only used by tlb_flush_page.  */
@@ -342,6 +361,78 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
     p = (void *)((uintptr_t)addr + env1->tlb_table[mmu_idx][page_index].addend);
     return qemu_ram_addr_from_host_nofail(p);
 }
+
+/* Return the guest physical address for a guest pc.
+ * Find the hva of the pc, and call qemu_phys_addr_from_host_nofail
+ * to get the guest physical address.
+ * Copy from get_page_addr_code(...)
+ */
+target_phys_addr_t get_phys_addr_code(CPUArchState *env1, target_ulong addr)
+{
+    int mmu_idx, page_index, pd;
+    void *p;
+    MemoryRegion *mr;
+
+    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    mmu_idx = cpu_mmu_index(env1);
+    if (unlikely(env1->tlb_table[mmu_idx][page_index].addr_code !=
+                (addr & TARGET_PAGE_MASK))) {
+        return -1;
+    }
+    pd = env1->iotlb[mmu_idx][page_index] & ~TARGET_PAGE_MASK;
+    mr = iotlb_to_region(pd);
+    if (memory_region_is_unassigned(mr)) {
+#if defined(TARGET_ALPHA) || defined(TARGET_MIPS) || defined(TARGET_SPARC)
+        cpu_unassigned_access(env1, addr, 0, 1, 0, 4);
+#else
+        cpu_abort(env1, "Trying to execute code outside RAM or ROM at 0x"
+                  TARGET_FMT_lx "\n", addr);
+#endif
+    }
+    /* Got the host virtual address of addr */
+    p = (void *)((uintptr_t)addr
+        + env1->tlb_table[mmu_idx][page_index].addend);
+    return qemu_phys_addr_from_host_nofail(p);
+}
+
+/* Return the guest physical address for a load instruction.
+ * Find the hva of the pc, and call qemu_phys_addr_from_host_nofail
+ * to get the guest physical address.
+ * Copy from get_page_addr_code(...)
+ */
+target_phys_addr_t get_phys_addr_read(CPUArchState *env1, target_ulong addr)
+{
+    int mmu_idx, page_index;
+    void *p;
+    uint32_t page_offset;
+    GPATLBEntry *te;
+    target_phys_addr_t paddr;
+
+    page_offset = addr & (4096 - 1);
+
+    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    mmu_idx = cpu_mmu_index(env1);
+    if (unlikely(env1->gpa_table[mmu_idx][page_index].vaddr !=
+                 (addr & TARGET_PAGE_MASK))) {
+      /*qemu_log_mem("gpatlb not hit " TARGET_FMT_lx " at index=%d\n",
+                    addr, page_index);
+        qemu_log_mem("gpa vaddr=" TARGET_FMT_lx " vaddr=" TARGET_FMT_lx "\n",
+                    env1->gpa_table[mmu_idx][page_index].vaddr
+                    , addr & TARGET_PAGE_MASK);*/
+        p = (void *)((uintptr_t)addr
+                    + env1->tlb_table[mmu_idx][page_index].addend);
+
+        te = &env1->gpa_table[mmu_idx][page_index];
+        te->vaddr = addr & TARGET_PAGE_MASK;
+        te->paddr = qemu_phys_addr_from_host_nofail(p) & TARGET_PAGE_MASK;
+
+        paddr = te->paddr | page_offset;
+    }
+    paddr = env1->gpa_table[mmu_idx][page_index].paddr | page_offset;
+    return paddr;
+}
+
+
 
 #define MMUSUFFIX _cmmu
 #undef GETPC

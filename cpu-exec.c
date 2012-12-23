@@ -545,6 +545,19 @@ int cpu_exec(CPUArchState *env)
                              tb->tc_ptr, tb->pc,
                              lookup_symbol(tb->pc));
 #endif
+                if (start_log) {
+                    if (tb->pc < KERN_BASE) {
+                        qemu_log_mem("trace," TARGET_FMT_lx ",%u,%d,\n",
+                                     tb->pc, tb->size, env->cpu_index);
+                    } else {
+                        if (exec_counter == 20) {
+                            qemu_log_mem("trace," TARGET_FMT_lx ",%u,%d,\n",
+                                         tb->pc, tb->size, env->cpu_index);
+                            exec_counter = 0;
+                        }
+                        exec_counter++;
+                    }
+                }
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */

@@ -3232,6 +3232,7 @@ int main(int argc, char **argv, char **envp)
         set_cpu_log(log_mask);
     }
 
+    set_mem_trace_log();
     if (!trace_backend_init(trace_events, trace_file)) {
         exit(1);
     }

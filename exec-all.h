@@ -105,6 +105,9 @@ void tlb_flush(CPUArchState *env, int flush_global);
 void tlb_set_page(CPUArchState *env, target_ulong vaddr,
                   target_phys_addr_t paddr, int prot,
                   int mmu_idx, target_ulong size);
+void gpatlb_set_page(CPUArchState *env, target_ulong vaddr,
+                     target_phys_addr_t paddr, int mmu_idx);
+
 void tb_invalidate_phys_addr(target_phys_addr_t addr);
 #else
 static inline void tlb_flush_page(CPUArchState *env, target_ulong addr)
@@ -353,6 +356,8 @@ static inline tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong
 #else
 /* cputlb.c */
 tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr);
+target_phys_addr_t get_phys_addr_code(CPUArchState *env1, target_ulong addr);
+target_phys_addr_t get_phys_addr_read(CPUArchState *env1, target_ulong addr);
 #endif
 
 typedef void (CPUDebugExcpHandler)(CPUArchState *env);

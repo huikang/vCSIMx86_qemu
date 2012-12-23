@@ -1152,6 +1152,11 @@ void set_numa_modes(void)
     }
 }
 
+void set_mem_trace_log(void)
+{
+    mem_trace_set_log();
+}
+
 void set_cpu_log(const char *optarg)
 {
     int mask;

@@ -6713,6 +6713,13 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #endif
         break;
 #endif
+    case 0xf1:
+        /*
+        start_log = start_log ? 0 : 1;
+        qemu_log_mem("invalid opcode, start_log=%d\n", start_log);
+        printf("invalid opcode, start_log=%d\n", start_log); */
+        gen_helper_trace_state();
+        break;
     case 0xfa: /* cli */
         if (!s->vm86) {
             if (s->cpl <= s->iopl) {
@@ -7093,6 +7100,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                         gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
                         break;
                     } else {
+                        gen_helper_trace_vmrun();
                         gen_helper_vmrun(tcg_const_i32(s->aflag),
                                          tcg_const_i32(s->pc - pc_start));
                         tcg_gen_exit_tb(0);

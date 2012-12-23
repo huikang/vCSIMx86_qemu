@@ -5107,11 +5107,46 @@ static inline void svm_load_seg_cache(target_phys_addr_t addr,
                            sc->base, sc->limit, sc->flags);
 }
 
+void helper_trace_vmrun(void)
+{
+    qemu_log("vmrun called\n");
+}
+
+static int vm_number = 2;
+static int vm_index = 0;
+void helper_trace_state(void)
+{
+	vm_index++;
+
+	if (vm_index == vm_number) {
+		qemu_log_mem("invalid opcode, start_log=1\n");
+		start_log = 1;
+	} else if (vm_index == (vm_number + 1)) {
+		qemu_log_mem("invalid opcode, start_log=0\n");
+		start_log = 0;
+	}
+
+    /* start_log = start_log ? 0 : 1; */
+	printf("invalid opcode, start_log=%d\n", start_log);
+}
+
 void helper_vmrun(int aflag, int next_eip_addend)
 {
     target_ulong addr;
     uint32_t event_inj;
     uint32_t int_ctl;
+
+    /*if (start_log) {
+        // check if the next function will call vmexit
+        if (!(env->hflags & HF_SVMI_MASK)) {
+	    qemu_log_mem("%s, no vmexit\n", __func__);
+	} else if (!env->intercept || 
+                   !(1ULL << (SVM_EXIT_VMRUN - SVM_EXIT_INTR))) {
+            qemu_log_mem("%s, no vmexit\n", __func__);
+        } else {
+            qemu_log_mem("%s, vmexit\n", __func__);
+        }
+	}*/
 
     helper_svm_check_intercept_param(SVM_EXIT_VMRUN, 0);
 
@@ -5121,6 +5156,9 @@ void helper_vmrun(int aflag, int next_eip_addend)
         addr = (uint32_t)EAX;
 
     qemu_log_mask(CPU_LOG_TB_IN_ASM, "vmrun! " TARGET_FMT_lx "\n", addr);
+    if (start_log) {
+        qemu_log_mem("vmrun," TARGET_FMT_lx ",%d,\n", addr, env->cpu_index);
+    }
 
     env->vm_vmcb = addr;
 
@@ -5493,7 +5531,13 @@ void helper_vmexit(uint32_t exit_code, uint64_t exit_info_1)
                 exit_code, exit_info_1,
                 ldq_phys(env->vm_vmcb + offsetof(struct vmcb, control.exit_info_2)),
                 EIP);
-
+    if (start_log) {
+        qemu_log_mem("vmexit,%016" PRIx64 ",%016" PRIx64 ",%d,\n",
+                     env->vm_vmcb,
+                     env->vm_vmcb + offsetof(struct vmcb, control.exit_info_2),
+                     env->cpu_index);
+    }
+    
     if(env->hflags & HF_INHIBIT_IRQ_MASK) {
         stl_phys(env->vm_vmcb + offsetof(struct vmcb, control.int_state), SVM_INTERRUPT_SHADOW_MASK);
         env->hflags &= ~HF_INHIBIT_IRQ_MASK;
