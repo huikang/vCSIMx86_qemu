@@ -1062,11 +1062,7 @@ static inline void tcg_out_tlb_load(TCGContext *s, int addrlo_idx,
     tcg_out_mov(s, type, r0, addrlo);
 
     /* jne label1 */
-    if (start_log) {
-        tcg_out8(s, OPC_JMP_short);
-    } else {
-        tcg_out8(s, OPC_JCC_short + JCC_JNE);
-    }
+    tcg_out8(s, OPC_JCC_short + JCC_JNE);
     label_ptr[0] = s->code_ptr;
     s->code_ptr++;
 

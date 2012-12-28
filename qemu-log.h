@@ -5,7 +5,6 @@
 extern FILE *logfile;
 extern int loglevel;
 
-extern FILE *memlogfile;
 
 /* 
  * The new API:
@@ -30,11 +29,6 @@ extern FILE *memlogfile;
 #define qemu_log(...) do {                 \
         if (logfile)                       \
             fprintf(logfile, ## __VA_ARGS__); \
-    } while (0)
-
-#define qemu_log_mem(...) do {                 \
-        if (memlogfile)                       \
-            fprintf(memlogfile, ## __VA_ARGS__); \
     } while (0)
 
 /* vfprintf-like logging function

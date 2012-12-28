@@ -106,8 +106,7 @@ DEF_HELPER_0(stgi, void)
 DEF_HELPER_0(clgi, void)
 DEF_HELPER_0(skinit, void)
 DEF_HELPER_1(invlpga, void, int)
-DEF_HELPER_0(trace_vmrun, void)
-DEF_HELPER_0(trace_state, void)
+
 /* x86 FPU */
 
 DEF_HELPER_1(flds_FT0, void, i32)

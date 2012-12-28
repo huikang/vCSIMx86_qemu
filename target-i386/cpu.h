@@ -22,15 +22,6 @@
 #include "config.h"
 #include "qemu-common.h"
 
-extern int start_log;
-extern int kmmu_counter;
-extern int exec_counter;
-#ifdef TARGET_X86_64
-#define KERN_BASE 0x800000000000
-#else
-#define KERN_BASE 0xc0000000
-#endif
-
 #ifdef TARGET_X86_64
 #define TARGET_LONG_BITS 64
 #else
@@ -730,7 +721,6 @@ typedef struct CPUX86State {
     uint8_t nmi_pending;
 
     CPU_COMMON
-    GPATLBEntry gpa_table[NB_MMU_MODES][CPU_TLB_SIZE];
 
     uint64_t pat;
 

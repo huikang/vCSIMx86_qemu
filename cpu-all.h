@@ -471,8 +471,6 @@ void cpu_set_log(int log_flags);
 void cpu_set_log_filename(const char *filename);
 int cpu_str_to_log_mask(const char *str);
 
-void mem_trace_set_log(void);
-
 #if !defined(CONFIG_USER_ONLY)
 
 /* Return the physical page corresponding to a virtual one. Use it

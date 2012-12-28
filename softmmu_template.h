@@ -159,22 +159,6 @@ glue(glue(glue(HELPER_PREFIX, ld), SUFFIX), MMUSUFFIX)(ENV_PARAM
         tlb_fill(env, addr, READ_ACCESS_TYPE, mmu_idx, retaddr);
         goto redo;
     }
-    if (start_log) {
-        if (addr < KERN_BASE /*mmu_idx == 1*/) {
-            qemu_log_mem("%s," TARGET_FMT_lx "," TARGET_FMT_lx ",%d,\n",
-                         __func__, addr, get_phys_addr_read(env, addr),
-                         env->cpu_index);
-        } else {
-            /* We do not log all the kernel mmu events */
-            if (kmmu_counter == 30) {
-                qemu_log_mem("%s," TARGET_FMT_lx "," TARGET_FMT_lx ",%d,\n",
-                             __func__, addr, get_phys_addr_read(env, addr),
-                             env->cpu_index);
-                kmmu_counter = 0;
-            }
-            kmmu_counter++;
-        }
-    }
     return res;
 }
 
@@ -320,24 +304,6 @@ void glue(glue(glue(HELPER_PREFIX, st), SUFFIX), MMUSUFFIX)(ENV_PARAM
 #endif
         tlb_fill(env, addr, 1, mmu_idx, retaddr);
         goto redo;
-    }
-
-    if (start_log) {
-        if (addr < KERN_BASE /*mmu_idx == 1*/) {
-            qemu_log_mem("%s," TARGET_FMT_lx "," TARGET_FMT_lx ",%d,\n",
-                         __func__, addr, get_phys_addr_read(env, addr),
-                         env->cpu_index);
-        } else {
-            /* We do not log all the kernel mmu events */
-            if (kmmu_counter == 30) {
-                qemu_log_mem("%s," TARGET_FMT_lx "," TARGET_FMT_lx ",%d,\n",
-                             __func__, addr, get_phys_addr_read(env, addr),
-                             env->cpu_index);
-
-                kmmu_counter = 0;
-            }
-            kmmu_counter++;
-        }
     }
 }
 

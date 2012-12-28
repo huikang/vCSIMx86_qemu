@@ -226,13 +226,6 @@ FILE *logfile;
 int loglevel;
 static int log_append = 0;
 
-int start_log;
-int kmmu_counter;
-int exec_counter;
-
-static const char *memlogfilename = "/tmp/qemu-mem-trace.log";
-FILE *memlogfile;
-
 /* statistics */
 static int tb_flush_count;
 static int tb_phys_invalidate_count;
@@ -1055,10 +1048,6 @@ TranslationBlock *tb_gen_code(CPUArchState *env,
 
     phys_pc = get_page_addr_code(env, pc);
     tb = tb_alloc(pc);
-    if (start_log) {
-        qemu_log_mem("decode," TARGET_FMT_lx "," TARGET_FMT_lx ",\n"
-                     , pc, get_phys_addr_code(env, pc));
-    }
     if (!tb) {
         /* flush must be done */
         tb_flush(env);
@@ -1680,19 +1669,6 @@ void cpu_single_step(CPUArchState *env, int enabled)
     }
 #endif
 }
-
-void mem_trace_set_log(void)
-{
-    memlogfile = fopen(memlogfilename, "w");
-    if (!memlogfile) {
-        perror(memlogfilename);
-        _exit(1);
-    }
-    start_log = 0;
-    exec_counter = 0;
-    kmmu_counter = 0;
-}
-
 
 /* enable or disable low levels log */
 void cpu_set_log(int log_flags)
@@ -2943,28 +2919,6 @@ int qemu_ram_addr_from_host(void *ptr, ram_addr_t *ram_addr)
         if (host - block->host < block->length) {
             *ram_addr = block->offset + (host - block->host);
             return 0;
-        }
-    }
-
-    return -1;
-}
-
-/* Return the guest physical address for the input hva
- * Find the RAMblock for a hva,
- * gpa = gpa of this block + (offset of the hva in the block)
- */
-target_phys_addr_t qemu_phys_addr_from_host_nofail(void *hva)
-{
-    RAMBlock *block;
-    uint8_t *host = hva;
-
-    QLIST_FOREACH(block, &ram_list.blocks, next) {
-        /* This case append when the block is not mapped. */
-        if (block->host == NULL) {
-            continue;
-        }
-        if (host - block->host < block->length) {
-            return block->mr->addr + (host - block->host);
         }
     }
 

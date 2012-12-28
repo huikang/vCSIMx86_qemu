@@ -760,10 +760,6 @@ int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
     vaddr = virt_addr + page_offset;
 
     tlb_set_page(env, vaddr, paddr, prot, mmu_idx, page_size);
-    if (start_log) {
-        gpatlb_set_page(env, vaddr, paddr, mmu_idx);
-    }
-
     return 0;
  do_fault_protect:
     error_code = PG_ERROR_P_MASK;
